@@ -1,0 +1,43 @@
+# Python virtuálne prostredie
+venv/
+env/
+ENV/
+.venv/
+.env/
+.ENV/
+lib64/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Distribúcia a balíky
+dist/
+build/
+*.egg-info/
+
+# SQLite databáza
+*.db
+*.sqlite
+*.sqlite3
+glass_calculator.db
+
+# Logy
+logs/
+*.log
+
+# Systémové súbory
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Dočasné súbory
+tmp/
+temp/ 
