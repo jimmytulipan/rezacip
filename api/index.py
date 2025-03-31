@@ -11,12 +11,6 @@ import io
 from datetime import datetime
 import re
 import sys
-import time
-from decimal import Decimal
-from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, ForeignKey, create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
-import json
 
 app = Flask(__name__, 
             template_folder='../templates',

@@ -1,63 +1,50 @@
-import os
 from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Any
 from dataclasses import dataclass
 import io
 from datetime import datetime
 import json
 import re
 import math
+import os
 import sys
-import time
-from sqlalchemy import create_engine, Column, Integer, Float, String, DateTime, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
 
 # Flask aplikácia
 app = Flask(__name__)
 
-# Konfigurácia SQLite databázy
-DB_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'glass_calculator.db')
-Base = declarative_base()
-engine = create_engine(f'sqlite:///{DB_PATH}')
-Session = sessionmaker(bind=engine)
+# Pamäťové údaje namiesto SQLite
+class MemoryDB:
+    def __init__(self):
+        self.categories = [
+            {"id": 1, "name": "FLOAT"},
+            {"id": 2, "name": "PLANIBEL"},
+            {"id": 3, "name": "STOPSOL"},
+            {"id": 4, "name": "DRÁTENÉ SKLO"},
+            {"id": 5, "name": "ORNAMENT ČÍRY"},
+            {"id": 6, "name": "ZRKADLÁ ČÍRE"}
+        ]
+        
+        self.glasses = [
+            {"id": 1, "name": "4 mm Float", "category_id": 1, "price_per_m2": 7.74, "cutting_fee": 5.0, "min_area": 0.1},
+            {"id": 2, "name": "6 mm Float", "category_id": 1, "price_per_m2": 12.50, "cutting_fee": 5.0, "min_area": 0.1},
+            {"id": 3, "name": "8 mm Float", "category_id": 1, "price_per_m2": 16.56, "cutting_fee": 5.0, "min_area": 0.1},
+            {"id": 4, "name": "10 mm Float", "category_id": 1, "price_per_m2": 25.52, "cutting_fee": 5.0, "min_area": 0.1},
+            {"id": 5, "name": "4 mm Planibel bronz + šedý", "category_id": 2, "price_per_m2": 15.20, "cutting_fee": 5.0, "min_area": 0.1},
+            {"id": 6, "name": "6 mm Planibel bronz + šedý", "category_id": 2, "price_per_m2": 23.20, "cutting_fee": 5.0, "min_area": 0.1},
+            {"id": 7, "name": "6mm Stopsol bronzový", "category_id": 3, "price_per_m2": 32.65, "cutting_fee": 5.0, "min_area": 0.1},
+            {"id": 8, "name": "6 mm Drátené sklo", "category_id": 4, "price_per_m2": 24.05, "cutting_fee": 5.0, "min_area": 0.1},
+            {"id": 9, "name": "Konfeta", "category_id": 5, "price_per_m2": 15.20, "cutting_fee": 5.0, "min_area": 0.1},
+            {"id": 10, "name": "4mm", "category_id": 6, "price_per_m2": 14.50, "cutting_fee": 5.0, "min_area": 0.1}
+        ]
+        
+        self.calculations = []
 
-# Databázové modely
-class GlassCategory(Base):
-    __tablename__ = 'glass_categories'
-    
-    id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
-    glasses = relationship("Glass", back_populates="category")
-
-class Glass(Base):
-    __tablename__ = 'glasses'
-    
-    id = Column(Integer, primary_key=True)
-    name = Column(String, nullable=False)
-    category_id = Column(Integer, ForeignKey('glass_categories.id'))
-    price_per_m2 = Column(Float, nullable=False)
-    cutting_fee = Column(Float, nullable=False)
-    min_area = Column(Float, nullable=False)
-    
-    category = relationship("GlassCategory", back_populates="glasses")
-
-class Calculation(Base):
-    __tablename__ = 'calculations'
-    
-    id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, nullable=False)
-    glass_id = Column(Integer, ForeignKey('glasses.id'))
-    width = Column(Float, nullable=False)
-    height = Column(Float, nullable=False)
-    area = Column(Float, nullable=False)
-    waste_area = Column(Float, nullable=False)
-    total_price = Column(Float, nullable=False)
-    created_at = Column(DateTime, default=datetime.utcnow)
+# Vytvorenie inštancie pamäťovej databázy
+db = MemoryDB()
 
 # Triedy pre optimalizáciu rezania
 @dataclass
@@ -143,29 +130,28 @@ class CuttingOptimizer:
         return buf
 
 class GlassCalculator:
-    def __init__(self, session):
-        self.session = session
-
     def get_glass_price(self, glass_id: int, width: float, height: float) -> Dict:
-        glass = self.session.query(Glass).get(glass_id)
+        # Nájsť sklo podľa ID v pamäťovej databáze
+        glass = next((g for g in db.glasses if g["id"] == glass_id), None)
+        
+        if not glass:
+            return {"error": "Glass not found"}
+            
         area = (width * height) / 1000000  # Convert to m²
         
         # Ensure minimum area
-        if area < glass.min_area:
-            area = glass.min_area
+        if area < glass["min_area"]:
+            area = glass["min_area"]
             
         # Cena za plochu
-        base_price = area * glass.price_per_m2
+        base_price = area * glass["price_per_m2"]
         
         return {
-            'glass_name': glass.name,
+            'glass_name': glass["name"],
             'dimensions': f"{width}x{height}mm",
             'area': round(area, 2),
             'area_price': round(base_price, 2)
         }
-
-# Vytvorenie tabuliek v databáze
-Base.metadata.create_all(engine)
 
 # Routy aplikácie
 @app.route('/')
@@ -174,27 +160,12 @@ def index():
 
 @app.route('/categories')
 def get_categories():
-    session = Session()
-    try:
-        categories = session.query(GlassCategory).all()
-        return jsonify([{'id': cat.id, 'name': cat.name} for cat in categories])
-    finally:
-        session.close()
+    return jsonify(db.categories)
 
 @app.route('/glasses/<int:category_id>')
 def get_glasses(category_id):
-    session = Session()
-    try:
-        glasses = session.query(Glass).filter_by(category_id=category_id).all()
-        return jsonify([{
-            'id': glass.id, 
-            'name': glass.name,
-            'price_per_m2': glass.price_per_m2,
-            'cutting_fee': glass.cutting_fee,
-            'min_area': glass.min_area
-        } for glass in glasses])
-    finally:
-        session.close()
+    glasses = [g for g in db.glasses if g["category_id"] == category_id]
+    return jsonify(glasses)
 
 @app.route('/optimize', methods=['POST'])
 def optimize_cutting():
@@ -229,13 +200,9 @@ def calculate_price():
     glass_id = data.get('glass_id')
     area = data.get('area', 0)
     
-    session = Session()
-    try:
-        calculator = GlassCalculator(session)
-        price_data = calculator.get_glass_price(glass_id, math.sqrt(area * 1000000), math.sqrt(area * 1000000))
-        return jsonify(price_data)
-    finally:
-        session.close()
+    calculator = GlassCalculator()
+    price_data = calculator.get_glass_price(glass_id, math.sqrt(area * 1000000), math.sqrt(area * 1000000))
+    return jsonify(price_data)
 
 # Pomocné funkcie
 def img_to_base64(img_buf):
