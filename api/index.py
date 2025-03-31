@@ -1,25 +1,28 @@
-from flask import Flask, render_template, request, jsonify, send_file, redirect, url_for
-import os
-import numpy as np
-import matplotlib
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
-from typing import List, Tuple, Dict
-from dataclasses import dataclass
-import math
-import io
-from datetime import datetime
-import re
-import sys
+from http.server import BaseHTTPRequestHandler
+import json
 
-app = Flask(__name__, 
-            template_folder='../templates',
-            static_folder='../static')
-
-# Import hlavného app.py pre funkčnosť aplikácie
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from app import *
-
-# Toto je pre Vercel
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 8080))) 
+class handler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header('Content-Type', 'application/json')
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.end_headers()
+        
+        response = {
+            "status": "ok",
+            "message": "Rezacip API je funkčná",
+            "endpoints": {
+                "/api/optimize": "POST - Optimalizácia rozmiestnenia tabúľ skla"
+            }
+        }
+        
+        self.wfile.write(json.dumps(response).encode('utf-8'))
+        return
+        
+    def do_OPTIONS(self):
+        self.send_response(200)
+        self.send_header('Access-Control-Allow-Origin', '*')
+        self.send_header('Access-Control-Allow-Methods', 'GET, OPTIONS')
+        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+        self.end_headers()
+        return 
