@@ -1,0 +1,8 @@
+{
+  "name": "rezaci-program",
+  "version": "1.0.0",
+  "description": "Aplikácia na optimalizáciu rezania skla",
+  "engines": {
+    "node": "18.x"
+  }
+} 

@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Optimalizátor rezania skla</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Hlavička -->
+        <header>
+            <div class="logo">
+                <i class="fas fa-cube logo-icon"></i>
+                <h1>OptiSklo<span>.2025</span></h1>
+            </div>
+            <nav>
+                <button id="historyBtn" class="nav-btn"><i class="fas fa-history"></i> História</button>
+                <button id="helpBtn" class="nav-btn"><i class="fas fa-question-circle"></i> Pomoc</button>
+            </nav>
+        </header>
+
+        <!-- Hlavný obsah -->
+        <main>
+            <div class="step-wizard">
+                <div class="step-item active" data-step="1">
+                    <div class="step-number">1</div>
+                    <div class="step-title">Veľkosť tabule</div>
+                </div>
+                <div class="step-item" data-step="2">
+                    <div class="step-number">2</div>
+                    <div class="step-title">Rozmery skiel</div>
+                </div>
+                <div class="step-item" data-step="3">
+                    <div class="step-number">3</div>
+                    <div class="step-title">Optimalizácia</div>
+                </div>
+                <div class="step-item" data-step="4">
+                    <div class="step-number">4</div>
+                    <div class="step-title">Typ skla</div>
+                </div>
+                <div class="step-item" data-step="5">
+                    <div class="step-number">5</div>
+                    <div class="step-title">Výpočet ceny</div>
+                </div>
+            </div>
+
+            <!-- Krok 1: Výber veľkosti tabule -->
+            <section id="step1" class="step-section active">
+                <h2 class="section-title">Vyberte veľkosť sklenenej tabule</h2>
+                <div class="card-container">
+                    <div class="dimension-card" data-width="321" data-height="225">
+                        <div class="dimension-visual">
+                            <div class="dimension-shape"></div>
+                            <div class="dimension-label">321 × 225 cm</div>
+                        </div>
+                        <div class="dimension-info">
+                            <p>Štandardná veľkosť</p>
+                            <span class="dimension-area">7.22 m²</span>
+                        </div>
+                    </div>
+                    <div class="dimension-card" data-width="160.5" data-height="255">
+                        <div class="dimension-visual">
+                            <div class="dimension-shape"></div>
+                            <div class="dimension-label">160.5 × 255 cm</div>
+                        </div>
+                        <div class="dimension-info">
+                            <p>Alternatívna veľkosť</p>
+                            <span class="dimension-area">4.09 m²</span>
+                        </div>
+                    </div>
+                    <div class="dimension-card custom" data-width="0" data-height="0">
+                        <div class="dimension-visual">
+                            <div class="dimension-shape"></div>
+                            <div class="dimension-label">Vlastná veľkosť</div>
+                        </div>
+                        <div class="dimension-form">
+                            <div class="input-group">
+                                <label for="customWidth">Šírka (cm)</label>
+                                <input type="number" id="customWidth" min="10" max="500" step="0.1">
+                            </div>
+                            <div class="input-group">
+                                <label for="customHeight">Výška (cm)</label>
+                                <input type="number" id="customHeight" min="10" max="500" step="0.1">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="actions">
+                    <button id="nextToStep2" class="btn btn-primary">Pokračovať <i class="fas fa-arrow-right"></i></button>
+                </div>
+            </section>
+
+            <!-- Krok 2: Zadanie rozmerov skiel -->
+            <section id="step2" class="step-section">
+                <h2 class="section-title">Zadajte rozmery skiel</h2>
+                <div class="input-panel">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="dimensions">Rozmery (Formát: šírka×výška v cm)</label>
+                            <textarea id="dimensions" placeholder="Napríklad: 100x50-83.5x92.2-120x60&#10;Alebo každý rozmer na novom riadku"></textarea>
+                        </div>
+                    </div>
+                    <div class="form-hint">
+                        <p><i class="fas fa-info-circle"></i> Môžete zadať viac rozmerov oddelených pomlčkou alebo nových riadkom.</p>
+                        <p><i class="fas fa-info-circle"></i> Príklad: <code>100x50-200x30</code> alebo každý rozmer na novom riadku.</p>
+                    </div>
+                </div>
+                <div class="dimension-list-container">
+                    <h3>Zoznam zadaných rozmerov</h3>
+                    <ul id="dimensionList" class="dimension-list"></ul>
+                    <button id="clearDimensions" class="btn btn-ghost"><i class="fas fa-trash"></i> Vymazať všetky</button>
+                </div>
+                <div class="actions">
+                    <button id="backToStep1" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Späť</button>
+                    <button id="nextToStep3" class="btn btn-primary">Vypočítať optimálne rozloženie <i class="fas fa-arrow-right"></i></button>
+                </div>
+            </section>
+
+            <!-- Krok 3: Optimalizácia -->
+            <section id="step3" class="step-section">
+                <h2 class="section-title">Optimalizované rozloženie</h2>
+                <div class="loading-container" id="optimizationLoading">
+                    <div class="loading-spinner"></div>
+                    <p>Prebieha výpočet optimálneho rozloženia...</p>
+                </div>
+                <div id="optimizationResults" class="results-container hide">
+                    <div class="results-summary">
+                        <div class="summary-item">
+                            <i class="fas fa-layer-group"></i>
+                            <div class="summary-content">
+                                <span class="summary-label">Počet tabúľ</span>
+                                <span class="summary-value" id="sheetsCount">0</span>
+                            </div>
+                        </div>
+                        <div class="summary-item">
+                            <i class="fas fa-border-all"></i>
+                            <div class="summary-content">
+                                <span class="summary-label">Celková plocha</span>
+                                <span class="summary-value" id="totalArea">0 m²</span>
+                            </div>
+                        </div>
+                        <div class="summary-item">
+                            <i class="fas fa-trash-alt"></i>
+                            <div class="summary-content">
+                                <span class="summary-label">Priemer. odpad</span>
+                                <span class="summary-value" id="averageWaste">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="layouts-container" id="layoutsContainer"></div>
+                </div>
+                <div class="actions">
+                    <button id="backToStep2" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Upraviť rozmery</button>
+                    <button id="nextToStep4" class="btn btn-primary">Pokračovať na výpočet ceny <i class="fas fa-arrow-right"></i></button>
+                </div>
+            </section>
+
+            <!-- Krok 4: Výber typu skla -->
+            <section id="step4" class="step-section">
+                <h2 class="section-title">Vyberte typ skla</h2>
+                <div class="category-selection">
+                    <label for="glassCategory">Kategória skla</label>
+                    <select id="glassCategory" class="form-control">
+                        <option value="">-- Vyberte kategóriu --</option>
+                    </select>
+                </div>
+                <div class="glass-type-container">
+                    <div id="glassTypesList" class="glass-types-grid"></div>
+                </div>
+                <div class="actions">
+                    <button id="backToStep3" class="btn btn-secondary"><i class="fas fa-arrow-left"></i> Späť</button>
+                    <button id="nextToStep5" class="btn btn-primary" disabled>Pokračovať <i class="fas fa-arrow-right"></i></button>
+                </div>
+            </section>
+
+            <!-- Krok 5: Výpočet ceny -->
+            <section id="step5" class="step-section">
+                <h2 class="section-title">Cenová kalkulácia</h2>
+                <div class="price-calculation-container">
+                    <div class="price-card">
+                        <div class="price-header">
+                            <h3 id="glassName">Názov skla</h3>
+                            <div class="price-badge" id="pricePerM2">0.00 €/m²</div>
+                        </div>
+                        <div class="price-details">
+                            <div class="price-row">
+                                <div class="price-label">Plocha skiel</div>
+                                <div class="price-value" id="glassArea">0 m²</div>
+                                <div class="price-amount" id="areaPrice">0.00 €</div>
+                            </div>
+                            <div class="price-row">
+                                <div class="price-label">Plocha odpadu</div>
+                                <div class="price-value" id="wasteArea">0 m²</div>
+                                <div class="price-amount" id="wastePrice">0.00 €</div>
+                            </div>
+                            <div class="price-divider"></div>
+                            <div class="price-row total">
+                                <div class="price-label">Spolu</div>
+                                <div class="price-value"></div>
+                                <div class="price-amount" id="totalPrice">0.00 €</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="action-buttons">
+                        <button id="generatePdfBtn" class="btn btn-primary"><i class="fas fa-file-pdf"></i> Generovať PDF</button>
+                        <button id="newCalculationBtn" class="btn btn-secondary"><i class="fas fa-calculator"></i> Nový výpočet</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- História výpočtov Modal -->
+        <div id="historyModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>História výpočtov</h2>
+                    <button class="close-btn"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <table class="history-table">
+                        <thead>
+                            <tr>
+                                <th>Dátum</th>
+                                <th>Typ skla</th>
+                                <th>Plocha</th>
+                                <th>Odpad</th>
+                                <th>Cena</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            <!-- História bude naplnená cez JavaScript -->
+                        </tbody>
+                    </table>
+                    <div class="empty-history hide" id="emptyHistory">
+                        <i class="fas fa-history fa-3x"></i>
+                        <p>Zatiaľ nemáte žiadne výpočty v histórii.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="clearHistoryBtn" class="btn btn-danger-outline"><i class="fas fa-trash"></i> Vymazať históriu</button>
+                    <button class="btn btn-primary close-modal">Zavrieť</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Návod/Pomoc Modal -->
+        <div id="helpModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Návod na použitie</h2>
+                    <button class="close-btn"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="modal-body">
+                    <div class="help-step">
+                        <div class="help-step-number">1</div>
+                        <div class="help-step-content">
+                            <h3>Vyberte veľkosť tabule</h3>
+                            <p>Zvoľte štandardnú veľkosť tabule alebo zadajte vlastné rozmery.</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <div class="help-step-number">2</div>
+                        <div class="help-step-content">
+                            <h3>Zadajte rozmery skiel</h3>
+                            <p>Zadajte rozmery jednotlivých skiel, ktoré chcete vyrezať.</p>
+                            <p>Formát: šírka×výška (napr. 100x50)</p>
+                            <p>Viacero rozmerov môžete oddeliť pomlčkou alebo zadať každý na nový riadok.</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <div class="help-step-number">3</div>
+                        <div class="help-step-content">
+                            <h3>Optimalizácia rozloženia</h3>
+                            <p>Systém automaticky vypočíta najefektívnejšie rozloženie skiel na tabuli s minimálnym odpadom.</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <div class="help-step-number">4</div>
+                        <div class="help-step-content">
+                            <h3>Výber typu skla</h3>
+                            <p>Zvoľte kategóriu a typ skla pre výpočet ceny.</p>
+                        </div>
+                    </div>
+                    <div class="help-step">
+                        <div class="help-step-number">5</div>
+                        <div class="help-step-content">
+                            <h3>Cenová kalkulácia</h3>
+                            <p>Zobrazí sa vám celková cena za sklo vrátane odpadu.</p>
+                            <p>Môžete si vygenerovať a stiahnuť PDF so všetkými detailmi.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary close-modal">Zavrieť</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html> 
