@@ -1,4 +1,4 @@
-from flask import request, jsonify
+from flask import Flask, request, jsonify
 import base64
 from io import BytesIO
 import math
@@ -16,8 +16,11 @@ sys.path.append(parent_dir)
 # Importujeme triedy z hlavnej aplikácie
 from app import GlassPanel, CuttingOptimizer
 
-def handler(request):
-    if request.method == 'POST':
+app = Flask(__name__)
+
+@app.route('/api/optimize', methods=['POST'])
+def optimize():
+    try:
         data = request.json
         stock_size = data.get('stock_size', {'width': 321, 'height': 225})
         glass_dimensions = data.get('dimensions', [])
@@ -69,5 +72,14 @@ def handler(request):
             'visualization': f"data:image/png;base64,{img_base64}",
             'total_area': round(total_area, 2)
         })
-    
-    return jsonify({"error": "Method not allowed"}), 405 
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def catch_all(path):
+    return jsonify({"error": "Route not found"}), 404
+
+# Toto je potrebné pre Vercel serverless funkcie
+def handler(event, context):
+    return app(event, context) 
